@@ -179,6 +179,8 @@ class TikTokApi:
             )
 
         await page.goto(url)
+        await page.mouse.move(0, 0)
+        await page.mouse.move(0, 100)
 
         session = TikTokPlaywrightSession(
             context,
@@ -276,6 +278,12 @@ class TikTokApi:
             )
         )
         self.num_sessions = len(self.sessions)
+
+    async def get_cookies(self):
+        """Get the cookies for all the sessions"""
+        return await asyncio.gather(
+            *(self.get_session_cookies(session) for session in self.sessions)
+        )
 
     async def close_sessions(self):
         """
@@ -495,3 +503,4 @@ class TikTokApi:
     async def __aexit__(self, exc_type, exc, tb):
         await self.close_sessions()
         await self.stop_playwright()
+
