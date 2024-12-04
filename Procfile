@@ -1,2 +1,2 @@
-release: playwright install
+release: playwright install chromium
 web: python app.py
