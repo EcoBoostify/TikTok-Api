@@ -1,9 +1,11 @@
 import asyncio
 import requests
+import os
 from TikTokApi import TikTokApi
 
 # Đặt ms_token của bạn ở đây
 ms_token = "Mw8mgiotxB_Yx9kYdIDwyoYgVt3o_yxirLVH4o9fnbWlh8ODp-LzcYdp9xj2cljPl06SSQ-qDGF1IEx94kDOW4wXG5RE3mnoMIJ1OZoWX0SWGoeO7GRy2yE8ahCs3c4kc-Fg8gE1_pmO"
+endpoint = os.getenv("API_ENDPOINT", None)
 
 # Khởi tạo TikTok API
 api = TikTokApi()
@@ -30,7 +32,6 @@ async def get_user_and_cookies():
 
 # Function gửi cookies đến một endpoint
 def send_cookies_to_endpoint(cookies):
-    endpoint = "https://ecoboostify.ngrok.dev/reel-setting"  # Thay thế với endpoint của bạn
     headers = {"Content-Type": "application/json"}
     payload = {
         "cookies": cookies
