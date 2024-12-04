@@ -7,7 +7,7 @@ TikTok-Api/geckodriver.log
 TikTok-Api/server.log
 browsermob-proxy/*
 myScripts/*
-test.py
+app.py
 debug.log
 res.html
 tmp/*
