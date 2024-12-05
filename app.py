@@ -8,6 +8,7 @@ from datetime import datetime
 # Đặt ms_token của bạn ở đây
 ms_token = "Mw8mgiotxB_Yx9kYdIDwyoYgVt3o_yxirLVH4o9fnbWlh8ODp-LzcYdp9xj2cljPl06SSQ-qDGF1IEx94kDOW4wXG5RE3mnoMIJ1OZoWX0SWGoeO7GRy2yE8ahCs3c4kc-Fg8gE1_pmO"
 endpoint = os.getenv("API_ENDPOINT", None)
+CHROMIUM_EXECUTABLE_PATH = os.getenv("CHROMIUM_EXECUTABLE_PATH", "/app/browsers/chromium-1091/chrome-linux/chrome/chromium-1091/chrome-linux/chrome")
 
 # Khởi tạo TikTok API
 api = TikTokApi()
@@ -27,7 +28,7 @@ async def get_user_and_cookies():
             ms_tokens=[ms_token],
             num_sessions=1,
             sleep_after=300,
-            executable_path="browsers/chromium-1091/chrome-linux/chrome"
+            executable_path=CHROMIUM_EXECUTABLE_PATH
         )
 
     # Lấy thông tin người dùng
