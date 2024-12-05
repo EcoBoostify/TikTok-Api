@@ -96,7 +96,8 @@ async def start_web_server():
     app.router.add_get('/healthcheck', handle_health)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    port = int(os.environ.get('PORT', 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     print("Health check server started on port 8080")
 
