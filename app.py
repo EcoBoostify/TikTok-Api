@@ -5,15 +5,12 @@ from TikTokApi import TikTokApi
 from aiohttp import web
 from datetime import datetime
 
-# Đặt ms_token của bạn ở đây
-ms_token = "Mw8mgiotxB_Yx9kYdIDwyoYgVt3o_yxirLVH4o9fnbWlh8ODp-LzcYdp9xj2cljPl06SSQ-qDGF1IEx94kDOW4wXG5RE3mnoMIJ1OZoWX0SWGoeO7GRy2yE8ahCs3c4kc-Fg8gE1_pmO"
+ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", None)
 CHROMIUM_EXECUTABLE_PATH = os.getenv("CHROMIUM_EXECUTABLE_PATH", "/app/browsers/chromium-1091/chrome-linux/chrome/chromium-1091/chrome-linux/chrome")
 
-# Khởi tạo TikTok API
 api = TikTokApi()
 
-# Biến để theo dõi trạng thái health
 health_status = {
     "last_run": None,
     "last_status": "Not run yet",
