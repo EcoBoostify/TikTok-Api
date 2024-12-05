@@ -27,6 +27,7 @@ async def get_user_and_cookies():
             ms_tokens=[ms_token],
             num_sessions=1,
             sleep_after=300,
+            executable_path="/browsers/chromium-1091/chrome-linux/chrome"
         )
 
     # Lấy thông tin người dùng
