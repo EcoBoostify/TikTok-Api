@@ -9,3 +9,4 @@ libasound2
 libxtst6
 x11-utils
 libgbm1
+libgbm-dev
