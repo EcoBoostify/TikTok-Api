@@ -1,1 +1,11 @@
 xvfb
+libatk1.0-0
+libatk-bridge2.0-0
+libgdk-pixbuf2.0-0
+libgdk-3-0
+libgtk-3-0
+libnss3
+libxss1
+libasound2
+libxtst6
+x11-utils
