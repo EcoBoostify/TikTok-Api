@@ -250,7 +250,7 @@ class TikTokApi:
                 override_browser_args = ["--headless=new"]
                 headless = False  # managed by the arg
             self.browser = await self.playwright.chromium.launch(
-                headless=headless, args=['--no-sandbox',
+                headless=headless, args=['--headless=new', '--no-sandbox',
                                          '--disable-setuid-sandbox',
                                          '--disable-dev-shm-usage',
                                          '--disable-gpu',
