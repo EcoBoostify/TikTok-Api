@@ -73,6 +73,16 @@ async def run_service():
             health_status["last_error"] = None
         except Exception as e:
             print(f"Error in run_service: {e}")
+
+            # Check if the error is a timeout
+            if "Timeout" in str(e):
+                try:
+                    print("Timeout exceeded. Closing sessions...")
+                    await api.close_sessions()
+                    print("Sessions closed successfully.")
+                except Exception as close_e:
+                    print(f"Error while closing sessions: {close_e}")
+
             health_status["last_status"] = "error"
             health_status["last_error"] = str(e)
 
