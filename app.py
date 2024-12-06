@@ -21,7 +21,7 @@ health_status = {
 async def get_user_and_cookies():
     if not api.sessions:
         await api.create_sessions(
-            headless=False,
+            headless=True,
             ms_tokens=[ms_token],
             num_sessions=1,
             sleep_after=300,
