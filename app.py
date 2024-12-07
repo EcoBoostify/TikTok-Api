@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
-CHROMIUM_EXECUTABLE_PATH = os.path.expanduser("~/.cache/ms-playwright/chromium-1148/chrome-linux/chrome")
+CHROMIUM_EXECUTABLE_PATH = os.path.expanduser("/usr/bin/chromium-browser")
 ms = [
     "ApU0A0tiv8U4OpJYDIac8uJVeFWVfHipzMYy16ymamzwz80ahMrgKKXJGSk0YK_upnzkCJiHsPS3gZBJ6oEOCGMjj8KHNepa-pk3NoFgoNpUv-joPithNjWzrTT8eUaXTL8Vb1vqcME64Fg=",
     "DMzuhjiQprGlDDqwjswYYNds63Ga2OF1_eL4gg14IQlGULgCq48H_YzMuXAjEYX-T_o2PrqoLOVCU4R2MBoKtP4Ock51e9ufMiAqtgVPx0GNd7Ct38egWwS_wzlzZzbREVKg3aeD6riZ1Ms=",
