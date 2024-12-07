@@ -263,7 +263,6 @@ class TikTokApi:
         else:
             raise ValueError("Invalid browser argument passed")
 
-        print("Browser launched")
         await asyncio.gather(
             *(
                 self.__create_session(
@@ -278,9 +277,7 @@ class TikTokApi:
                 for _ in range(num_sessions)
             )
         )
-        print("Sessions created")
         self.num_sessions = len(self.sessions)
-        print(f"Number of sessions: {self.num_sessions}")
 
     async def get_cookies(self):
         """Get the cookies for all the sessions"""
