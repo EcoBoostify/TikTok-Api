@@ -29,7 +29,7 @@ async def get_user_and_cookies():
             headless=False,
             ms_tokens=ms,
             num_sessions=1,
-            sleep_after=300,
+            sleep_after=1,
             executable_path=CHROMIUM_EXECUTABLE_PATH
         )
 
