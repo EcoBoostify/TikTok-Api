@@ -257,7 +257,7 @@ class TikTokApi:
 
         if browser == "chromium":
             if headless and override_browser_args is None:
-                override_browser_args = ["--headless=new"]
+                override_browser_args = ["--headless=new", "--no-sandbox"]
                 headless = False  # managed by the arg
             self.browser = await self.playwright.chromium.launch(
                 headless=headless, args=override_browser_args, proxy=random_choice(proxies), executable_path=executable_path
