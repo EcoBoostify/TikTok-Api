@@ -45,7 +45,8 @@ async def get_user_and_cookies():
             ms_tokens=ms,
             num_sessions=1,
             sleep_after=100,
-            executable_path=CHROMIUM_EXECUTABLE_PATH
+            executable_path=CHROMIUM_EXECUTABLE_PATH,
+            browser="chromium"
         )
         logger.info("Session created successfully.")
 
