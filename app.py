@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
-CHROMIUM_EXECUTABLE_PATH = "/root/.cache/ms-playwright/chromium_headless_shell-1148"
+CHROMIUM_EXECUTABLE_PATH = '/root/.cache/ms-playwright/chromium-1148/chrome-linux/chrome'
 ms = ["1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="]
 api = TikTokApi()
 
