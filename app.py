@@ -39,6 +39,7 @@ async def get_user_and_cookies():
     logger.info("Starting to get user info and cookies")
     if not api.sessions:
         logger.info("No existing sessions. Creating new session.")
+        logger.info("Path: " + CHROMIUM_EXECUTABLE_PATH)
         await api.create_sessions(
             headless=True,
             ms_tokens=ms,
