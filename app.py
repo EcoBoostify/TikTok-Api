@@ -40,7 +40,7 @@ async def get_user_and_cookies():
     if not api.sessions:
         logger.info("No existing sessions. Creating new session.")
         await api.create_sessions(
-            headless=False,
+            headless=True,
             ms_tokens=ms,
             num_sessions=1,
             sleep_after=100,
