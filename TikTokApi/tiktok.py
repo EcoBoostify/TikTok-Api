@@ -177,7 +177,17 @@ class TikTokApi:
                 else route.continue_(),
             )
 
-        await page.goto(url)
+        retries = 1
+        max_retries = 10
+        while retries <= max_retries:
+            try:
+                await page.goto(url)
+            except:
+                await asyncio.sleep(60)
+                retries += 1
+                continue
+            break
+
         await page.mouse.move(0, 0)
         await page.mouse.move(0, 100)
 
