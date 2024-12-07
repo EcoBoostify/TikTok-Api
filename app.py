@@ -1,60 +1,162 @@
 import asyncio
 import requests
+import os
+import logging
 from TikTokApi import TikTokApi
+from aiohttp import web
+from datetime import datetime
 
-# Đặt ms_token của bạn ở đây
-ms_token = "Mw8mgiotxB_Yx9kYdIDwyoYgVt3o_yxirLVH4o9fnbWlh8ODp-LzcYdp9xj2cljPl06SSQ-qDGF1IEx94kDOW4wXG5RE3mnoMIJ1OZoWX0SWGoeO7GRy2yE8ahCs3c4kc-Fg8gE1_pmO"
+# Initialize Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-# Khởi tạo TikTok API
+ms_token = os.getenv("MS_TOKEN", None)
+endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
+CHROMIUM_EXECUTABLE_PATH = os.path.expanduser("~/.cache/ms-playwright/chromium-1148/chrome-linux/chrome")
+ms = [
+    "ApU0A0tiv8U4OpJYDIac8uJVeFWVfHipzMYy16ymamzwz80ahMrgKKXJGSk0YK_upnzkCJiHsPS3gZBJ6oEOCGMjj8KHNepa-pk3NoFgoNpUv-joPithNjWzrTT8eUaXTL8Vb1vqcME64Fg=",
+    "DMzuhjiQprGlDDqwjswYYNds63Ga2OF1_eL4gg14IQlGULgCq48H_YzMuXAjEYX-T_o2PrqoLOVCU4R2MBoKtP4Ock51e9ufMiAqtgVPx0GNd7Ct38egWwS_wzlzZzbREVKg3aeD6riZ1Ms=",
+    "GooYwTZSLx8grmyDApQOgEdDuDcBrZ29rRbJWNnsm7NLwP19H5XJ-P15IOmXLi7pHkOdnBhEZKkr0VDDloWg9k6ur9agwBT5jmIL9eBZlhb-Ozxy46HkFQNi2ORoQlnkEK4pfWtLNYQ6RJc=",
+    "07hf4kJ4bFxwECTYfj0rBZnwx1asabwQ0tkhfDksBX4VjMT4GRUZMC0vtENsvbdq1Exw9_aAoKI8cSTau3ECGwOU4po8uPFPWAo_Pc7h2aOn_Cuy6f0Qg0N_INetLm6cMUOS9hGtLrCIIa4=",
+    "1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="
+]
 api = TikTokApi()
 
-# Tạo function lấy thông tin người dùng và cookies
+health_status = {
+    "last_run": None,
+    "last_status": "Not run yet",
+    "last_error": None
+}
+
+# Function to get user info and cookies
 async def get_user_and_cookies():
+    logger.info("Starting to get user info and cookies")
     if not api.sessions:
+        logger.info("No existing sessions. Creating new session.")
+        logger.info("Path: " + CHROMIUM_EXECUTABLE_PATH)
         await api.create_sessions(
-            headless=True,
-            ms_tokens=[ms_token],
+            ms_tokens=ms,
             num_sessions=1,
-            sleep_after=300,
+            sleep_after=100,
+            executable_path=CHROMIUM_EXECUTABLE_PATH,
+            browser="chromium"
         )
+        logger.info("Session created successfully.")
 
-    # Lấy thông tin người dùng
-    user = api.user(username="thuuyenjenabyu")
-    user_data = await user.info()
+    try:
+        # Get user information
+        logger.info("Fetching user information for username 'thuuyenjenabyu'")
+        user = api.user(username="thuuyenjenabyu")
+        user_data = await user.info()
+        logger.debug(f"User data retrieved: {user_data}")
 
-    # Lấy cookies
-    cookies = await api.get_cookies()
+        # Get cookies
+        logger.info("Fetching cookies")
+        cookies = await api.get_cookies()
+        logger.debug(f"Cookies retrieved: {cookies}")
 
-    # Trả về user_data và cookies
-    return user_data, cookies
+        return user_data, cookies
+    except Exception as e:
+        logger.error(f"Error in get_user_and_cookies: {e}", exc_info=True)
+        raise
 
-# Function gửi cookies đến một endpoint
+# Function to send cookies to an endpoint
 def send_cookies_to_endpoint(cookies):
-    endpoint = "https://ecoboostify.ngrok.dev/reel-setting"  # Thay thế với endpoint của bạn
+    logger.info("Preparing to send cookies to the endpoint")
     headers = {"Content-Type": "application/json"}
     payload = {
         "cookies": cookies
     }
-    print(payload)
-    response = requests.post(endpoint, json=payload, headers=headers)
+    logger.debug(f"Payload: {payload}")
+    try:
+        response = requests.post(endpoint, json=payload, headers=headers)
+        if response.status_code == 200:
+            logger.info("Cookies sent successfully!")
+            return "success"
+        else:
+            logger.warning(f"Failed to send cookies, status code: {response.status_code}")
+            return f"failed (status code: {response.status_code})"
+    except Exception as e:
+        logger.error(f"Exception while sending cookies: {e}", exc_info=True)
+        return f"exception: {e}"
 
-    if response.status_code == 200:
-        print("Cookies sent successfully!")
-    else:
-        print(f"Failed to send cookies, status code: {response.status_code}")
-
-# Hàm chính chạy mỗi phút
+# Main service function that runs every minute
 async def run_service():
+    logger.info("Service started, will run every minute.")
     while True:
-        # Lấy thông tin người dùng và cookies
-        user_data, cookies = await get_user_and_cookies()
+        try:
+            logger.info("Running service cycle")
+            # Get user data and cookies
+            user_data, cookies = await get_user_and_cookies()
 
-        # Gửi cookies tới endpoint
-        send_cookies_to_endpoint(cookies)
+            # Send cookies to endpoint
+            status = send_cookies_to_endpoint(cookies)
 
-        # Đợi 1 phút
+            # Update health status
+            health_status["last_run"] = datetime.utcnow().isoformat() + "Z"
+            health_status["last_status"] = status
+            health_status["last_error"] = None
+            logger.info(f"Service cycle completed successfully. Status: {status}")
+        except Exception as e:
+            logger.error(f"Error in run_service: {e}", exc_info=True)
+
+            # Check if the error is a timeout
+            if "Timeout" in str(e):
+                try:
+                    logger.warning("Timeout exceeded. Attempting to close sessions.")
+                    await api.close_sessions()
+                    logger.info("Sessions closed successfully.")
+                except Exception as close_e:
+                    logger.error(f"Error while closing sessions: {close_e}", exc_info=True)
+
+            health_status["last_status"] = "error"
+            health_status["last_error"] = str(e)
+
+        # Wait for 1 minute before the next cycle
+        logger.info("Waiting for 60 seconds before the next cycle")
         await asyncio.sleep(60)
 
+# Handler for the /healthcheck endpoint
+async def handle_health(request):
+    logger.info("Received healthcheck request")
+    return web.json_response({
+        "status": "ok" if health_status["last_status"] != "error" else "error",
+        "last_run": health_status["last_run"],
+        "last_status": health_status["last_status"],
+        "last_error": health_status["last_error"]
+    })
+
+# Function to start the web server
+async def start_web_server():
+    logger.info("Starting web server for healthcheck")
+    app = web.Application()
+    app.router.add_get('/healthcheck', handle_health)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get('PORT', 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    logger.info(f"Health check server started on port {port}")
+
+# Main coroutine to run both the service and web server
+async def main():
+    logger.info("Main coroutine started")
+    await asyncio.gather(
+        run_service(),
+        start_web_server(),
+    )
+
 if __name__ == "__main__":
-    # Chạy service
-    asyncio.run(run_service())
+    logger.info("Starting the application")
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Service stopped by user")
+    except Exception as e:
+        logger.critical(f"Unhandled exception: {e}", exc_info=True)
