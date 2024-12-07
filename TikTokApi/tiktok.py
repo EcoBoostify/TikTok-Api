@@ -5,6 +5,7 @@ from typing import Any
 import random
 import time
 import json
+from playwright.async_api import BrowserContext
 
 from playwright.async_api import async_playwright
 from urllib.parse import urlencode, quote, urlparse
@@ -134,82 +135,146 @@ class TikTokApi:
         session.params = session_params
 
     async def __create_session(
-        self,
-        url: str = "https://www.tiktok.com",
-        ms_token: str = None,
-        proxy: str = None,
-        context_options: dict = {},
-        sleep_after: int = 1,
-        cookies: dict = None,
-        suppress_resource_load_types: list[str] = None,
+            self,
+            url: str = "https://www.tiktok.com",
+            ms_token: str = None,
+            proxy: str = None,
+            context_options: dict = {},
+            sleep_after: int = 1,
+            cookies: dict = None,
+            suppress_resource_load_types: list[str] = None,
     ):
         """Create a TikTokPlaywrightSession"""
-        if ms_token is not None:
-            if cookies is None:
-                cookies = {}
-            cookies["msToken"] = ms_token
+        self.logger.info("Starting session creation process.")
 
-        context = await self.browser.new_context(proxy=proxy, **context_options)
-        if cookies is not None:
-            formatted_cookies = [
-                {"name": k, "value": v, "domain": urlparse(url).netloc, "path": "/"}
-                for k, v in cookies.items()
-                if v is not None
-            ]
-            await context.add_cookies(formatted_cookies)
-        page = await context.new_page()
-        await stealth_async(page)
+        try:
+            # Xử lý ms_token và cookies
+            if ms_token is not None:
+                self.logger.debug("ms_token provided, setting in cookies.")
+                if cookies is None:
+                    cookies = {}
+                cookies["msToken"] = ms_token
+            else:
+                self.logger.debug("No ms_token provided.")
 
-        # Get the request headers to the url
-        request_headers = None
+            # Tạo context mới với proxy và các tùy chọn context khác
+            self.logger.debug(f"Creating new browser context with proxy: {proxy} and options: {context_options}")
+            context: BrowserContext = await self.browser.new_context(proxy=proxy, **context_options)
+            self.logger.info("Browser context created successfully.")
 
-        def handle_request(request):
-            nonlocal request_headers
-            request_headers = request.headers
+            # Thêm cookies nếu có
+            if cookies is not None:
+                self.logger.debug(f"Adding cookies: {cookies}")
+                formatted_cookies = [
+                    {"name": k, "value": v, "domain": urlparse(url).netloc, "path": "/"}
+                    for k, v in cookies.items()
+                    if v is not None
+                ]
+                await context.add_cookies(formatted_cookies)
+                self.logger.info("Cookies added to the context.")
 
-        page.once("request", handle_request)
+            # Tạo trang mới
+            self.logger.debug("Creating new page in the context.")
+            page = await context.new_page()
+            self.logger.info("New page created successfully.")
 
-        if suppress_resource_load_types is not None:
-            await page.route(
-                "**/*",
-                lambda route, request: route.abort()
-                if request.resource_type in suppress_resource_load_types
-                else route.continue_(),
-            )
+            # Áp dụng stealth
+            self.logger.debug("Applying stealth to the page.")
+            await stealth_async(page)
+            self.logger.info("Stealth applied to the page.")
 
-        retries = 1
-        max_retries = 10
-        while retries <= max_retries:
-            try:
-                await page.goto(url)
-            except:
-                await asyncio.sleep(60)
-                retries += 1
-                continue
-            break
+            # Khởi tạo biến lưu headers của request
+            request_headers = None
 
-        await page.mouse.move(0, 0)
-        await page.mouse.move(0, 100)
+            # Xử lý sự kiện request đầu tiên
+            def handle_request(request):
+                nonlocal request_headers
+                request_headers = request.headers
+                self.logger.debug(f"Captured request headers: {request_headers}")
 
-        session = TikTokPlaywrightSession(
-            context,
-            page,
-            ms_token=ms_token,
-            proxy=proxy,
-            headers=request_headers,
-            base_url=url,
-        )
-        if ms_token is None:
-            time.sleep(sleep_after)  # TODO: Find a better way to wait for msToken
-            cookies = await self.get_session_cookies(session)
-            ms_token = cookies.get("msToken")
-            session.ms_token = ms_token
-            if ms_token is None:
-                self.logger.info(
-                    f"Failed to get msToken on session index {len(self.sessions)}, you should consider specifying ms_tokens"
+            page.once("request", handle_request)
+            self.logger.debug("Request handler attached to capture headers.")
+
+            # Suppress các loại resource load nếu được cung cấp
+            if suppress_resource_load_types is not None:
+                self.logger.debug(f"Setting up resource suppression for types: {suppress_resource_load_types}")
+                await page.route(
+                    "**/*",
+                    lambda route, request: (
+                        self.logger.debug(f"Aborting request for resource type: {request.resource_type}") or route.abort()
+                        if request.resource_type in suppress_resource_load_types
+                        else (self.logger.debug(f"Allowing request for resource type: {request.resource_type}") or route.continue_())
+                    ),
                 )
-        self.sessions.append(session)
-        await self.__set_session_params(session)
+                self.logger.info("Resource suppression configured.")
+
+            # Thử truy cập URL với cơ chế retry
+            retries = 1
+            max_retries = 10
+            while retries <= max_retries:
+                self.logger.debug(f"Attempt {retries} to navigate to {url}.")
+                try:
+                    await page.goto(url)
+                    self.logger.info(f"Successfully navigated to {url} on attempt {retries}.")
+                    break
+                except Exception as e:
+                    self.logger.warning(f"Attempt {retries} failed to navigate to {url}: {e}")
+                    if retries < max_retries:
+                        self.logger.info(f"Waiting 60 seconds before retrying...")
+                        await asyncio.sleep(60)
+                        retries += 1
+                    else:
+                        self.logger.error(f"Failed to navigate to {url} after {max_retries} attempts.")
+                        raise
+
+            # Di chuyển chuột để kích hoạt các sự kiện nếu cần
+            self.logger.debug("Moving mouse to (0, 0).")
+            await page.mouse.move(0, 0)
+            self.logger.debug("Moving mouse to (0, 100).")
+            await page.mouse.move(0, 100)
+            self.logger.info("Mouse movements completed.")
+
+            # Tạo đối tượng session
+            session = TikTokPlaywrightSession(
+                context,
+                page,
+                ms_token=ms_token,
+                proxy=proxy,
+                headers=request_headers,
+                base_url=url,
+            )
+            self.logger.debug("TikTokPlaywrightSession object created.")
+
+            # Nếu ms_token chưa được cung cấp, cố gắng lấy từ cookies
+            if ms_token is None:
+                self.logger.info("ms_token not provided, attempting to retrieve from cookies.")
+                await asyncio.sleep(sleep_after)  # TODO: Tìm cách tốt hơn để đợi msToken
+                cookies = await self.get_session_cookies(session)
+                ms_token = cookies.get("msToken")
+                session.ms_token = ms_token
+                self.logger.debug(f"Retrieved msToken: {ms_token}")
+
+                if ms_token is None:
+                    self.logger.warning(
+                        f"Failed to get msToken on session index {len(self.sessions)}, you should consider specifying ms_tokens"
+                    )
+                else:
+                    self.logger.info("msToken retrieved successfully.")
+
+            # Thêm session vào danh sách sessions
+            self.sessions.append(session)
+            self.logger.info(f"Session appended. Total sessions: {len(self.sessions)}.")
+
+            # Thiết lập các tham số cho session
+            await self.__set_session_params(session)
+            self.logger.info("Session parameters set successfully.")
+
+            self.logger.info("Session creation process completed successfully.")
+            return session
+
+        except Exception as e:
+            self.logger.error(f"An error occurred during session creation: {e}", exc_info=True)
+            raise
 
     async def create_sessions(
         self,
