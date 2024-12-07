@@ -1,19 +1,31 @@
 import asyncio
 import requests
 import os
+import logging
 from TikTokApi import TikTokApi
 from aiohttp import web
 from datetime import datetime
 
+# Initialize Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
 CHROMIUM_EXECUTABLE_PATH = os.path.expanduser("~/.cache/ms-playwright/chromium-1148/chrome-linux/chrome")
-ms = ["ApU0A0tiv8U4OpJYDIac8uJVeFWVfHipzMYy16ymamzwz80ahMrgKKXJGSk0YK_upnzkCJiHsPS3gZBJ6oEOCGMjj8KHNepa-pk3NoFgoNpUv-joPithNjWzrTT8eUaXTL8Vb1vqcME64Fg=",
-      "DMzuhjiQprGlDDqwjswYYNds63Ga2OF1_eL4gg14IQlGULgCq48H_YzMuXAjEYX-T_o2PrqoLOVCU4R2MBoKtP4Ock51e9ufMiAqtgVPx0GNd7Ct38egWwS_wzlzZzbREVKg3aeD6riZ1Ms=",
-      "GooYwTZSLx8grmyDApQOgEdDuDcBrZ29rRbJWNnsm7NLwP19H5XJ-P15IOmXLi7pHkOdnBhEZKkr0VDDloWg9k6ur9agwBT5jmIL9eBZlhb-Ozxy46HkFQNi2ORoQlnkEK4pfWtLNYQ6RJc=",
-      "07hf4kJ4bFxwECTYfj0rBZnwx1asabwQ0tkhfDksBX4VjMT4GRUZMC0vtENsvbdq1Exw9_aAoKI8cSTau3ECGwOU4po8uPFPWAo_Pc7h2aOn_Cuy6f0Qg0N_INetLm6cMUOS9hGtLrCIIa4=",
-      "1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="
-      ]
+ms = [
+    "ApU0A0tiv8U4OpJYDIac8uJVeFWVfHipzMYy16ymamzwz80ahMrgKKXJGSk0YK_upnzkCJiHsPS3gZBJ6oEOCGMjj8KHNepa-pk3NoFgoNpUv-joPithNjWzrTT8eUaXTL8Vb1vqcME64Fg=",
+    "DMzuhjiQprGlDDqwjswYYNds63Ga2OF1_eL4gg14IQlGULgCq48H_YzMuXAjEYX-T_o2PrqoLOVCU4R2MBoKtP4Ock51e9ufMiAqtgVPx0GNd7Ct38egWwS_wzlzZzbREVKg3aeD6riZ1Ms=",
+    "GooYwTZSLx8grmyDApQOgEdDuDcBrZ29rRbJWNnsm7NLwP19H5XJ-P15IOmXLi7pHkOdnBhEZKkr0VDDloWg9k6ur9agwBT5jmIL9eBZlhb-Ozxy46HkFQNi2ORoQlnkEK4pfWtLNYQ6RJc=",
+    "07hf4kJ4bFxwECTYfj0rBZnwx1asabwQ0tkhfDksBX4VjMT4GRUZMC0vtENsvbdq1Exw9_aAoKI8cSTau3ECGwOU4po8uPFPWAo_Pc7h2aOn_Cuy6f0Qg0N_INetLm6cMUOS9hGtLrCIIa4=",
+    "1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="
+]
 api = TikTokApi()
 
 health_status = {
@@ -22,9 +34,11 @@ health_status = {
     "last_error": None
 }
 
-# Tạo function lấy thông tin người dùng và cookies
+# Function to get user info and cookies
 async def get_user_and_cookies():
+    logger.info("Starting to get user info and cookies")
     if not api.sessions:
+        logger.info("No existing sessions. Creating new session.")
         await api.create_sessions(
             headless=False,
             ms_tokens=ms,
@@ -32,70 +46,84 @@ async def get_user_and_cookies():
             sleep_after=1,
             executable_path=CHROMIUM_EXECUTABLE_PATH
         )
+        logger.info("Session created successfully.")
 
-    # Lấy thông tin người dùng
-    user = api.user(username="thuuyenjenabyu")
-    user_data = await user.info()
+    try:
+        # Get user information
+        logger.info("Fetching user information for username 'thuuyenjenabyu'")
+        user = api.user(username="thuuyenjenabyu")
+        user_data = await user.info()
+        logger.debug(f"User data retrieved: {user_data}")
 
-    # Lấy cookies
-    cookies = await api.get_cookies()
+        # Get cookies
+        logger.info("Fetching cookies")
+        cookies = await api.get_cookies()
+        logger.debug(f"Cookies retrieved: {cookies}")
 
-    # Trả về user_data và cookies
-    return user_data, cookies
+        return user_data, cookies
+    except Exception as e:
+        logger.error(f"Error in get_user_and_cookies: {e}", exc_info=True)
+        raise
 
-# Function gửi cookies đến một endpoint
+# Function to send cookies to an endpoint
 def send_cookies_to_endpoint(cookies):
+    logger.info("Preparing to send cookies to the endpoint")
     headers = {"Content-Type": "application/json"}
     payload = {
         "cookies": cookies
     }
-    print(payload)
+    logger.debug(f"Payload: {payload}")
     try:
         response = requests.post(endpoint, json=payload, headers=headers)
         if response.status_code == 200:
-            print("Cookies sent successfully!")
+            logger.info("Cookies sent successfully!")
             return "success"
         else:
-            print(f"Failed to send cookies, status code: {response.status_code}")
+            logger.warning(f"Failed to send cookies, status code: {response.status_code}")
             return f"failed (status code: {response.status_code})"
     except Exception as e:
-        print(f"Exception while sending cookies: {e}")
+        logger.error(f"Exception while sending cookies: {e}", exc_info=True)
         return f"exception: {e}"
 
-# Hàm chính chạy mỗi phút
+# Main service function that runs every minute
 async def run_service():
+    logger.info("Service started, will run every minute.")
     while True:
         try:
-            # Lấy thông tin người dùng và cookies
+            logger.info("Running service cycle")
+            # Get user data and cookies
             user_data, cookies = await get_user_and_cookies()
 
-            # Gửi cookies tới endpoint
+            # Send cookies to endpoint
             status = send_cookies_to_endpoint(cookies)
 
-            # Cập nhật trạng thái health
+            # Update health status
             health_status["last_run"] = datetime.utcnow().isoformat() + "Z"
             health_status["last_status"] = status
             health_status["last_error"] = None
+            logger.info(f"Service cycle completed successfully. Status: {status}")
         except Exception as e:
-            print(f"Error in run_service: {e}")
+            logger.error(f"Error in run_service: {e}", exc_info=True)
 
             # Check if the error is a timeout
             if "Timeout" in str(e):
                 try:
-                    print("Timeout exceeded. Closing sessions...")
+                    logger.warning("Timeout exceeded. Attempting to close sessions.")
                     await api.close_sessions()
-                    print("Sessions closed successfully.")
+                    logger.info("Sessions closed successfully.")
                 except Exception as close_e:
-                    print(f"Error while closing sessions: {close_e}")
+                    logger.error(f"Error while closing sessions: {close_e}", exc_info=True)
 
             health_status["last_status"] = "error"
             health_status["last_error"] = str(e)
 
-        # Đợi 1 phút
+        # Wait for 1 minute before the next cycle
+        logger.info("Waiting for 60 seconds before the next cycle")
         await asyncio.sleep(60)
 
-# Handler cho endpoint /health
+# Handler for the /healthcheck endpoint
 async def handle_health(request):
+    logger.info("Received healthcheck request")
     return web.json_response({
         "status": "ok" if health_status["last_status"] != "error" else "error",
         "last_run": health_status["last_run"],
@@ -103,8 +131,9 @@ async def handle_health(request):
         "last_error": health_status["last_error"]
     })
 
-# Function để khởi động web server
+# Function to start the web server
 async def start_web_server():
+    logger.info("Starting web server for healthcheck")
     app = web.Application()
     app.router.add_get('/healthcheck', handle_health)
     runner = web.AppRunner(app)
@@ -112,17 +141,21 @@ async def start_web_server():
     port = int(os.environ.get('PORT', 8080))
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
-    print("Health check server started on port 8080")
+    logger.info(f"Health check server started on port {port}")
 
-# Main coroutine để chạy cả service và web server
+# Main coroutine to run both the service and web server
 async def main():
+    logger.info("Main coroutine started")
     await asyncio.gather(
         run_service(),
         start_web_server(),
     )
 
 if __name__ == "__main__":
+    logger.info("Starting the application")
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Service stopped by user")
+        logger.info("Service stopped by user")
+    except Exception as e:
+        logger.critical(f"Unhandled exception: {e}", exc_info=True)
