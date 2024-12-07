@@ -110,7 +110,7 @@ async def run_service():
             if "Timeout" in str(e):
                 try:
                     logger.warning("Timeout exceeded. Attempting to close sessions.")
-                    await api.close_sessions()
+                    # await api.close_sessions()
                     logger.info("Sessions closed successfully.")
                 except Exception as close_e:
                     logger.error(f"Error while closing sessions: {close_e}", exc_info=True)
