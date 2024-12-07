@@ -19,13 +19,7 @@ logger = logging.getLogger(__name__)
 ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
 CHROMIUM_EXECUTABLE_PATH = os.path.expanduser("/usr/bin/chromium-browser")
-ms = [
-    "ApU0A0tiv8U4OpJYDIac8uJVeFWVfHipzMYy16ymamzwz80ahMrgKKXJGSk0YK_upnzkCJiHsPS3gZBJ6oEOCGMjj8KHNepa-pk3NoFgoNpUv-joPithNjWzrTT8eUaXTL8Vb1vqcME64Fg=",
-    "DMzuhjiQprGlDDqwjswYYNds63Ga2OF1_eL4gg14IQlGULgCq48H_YzMuXAjEYX-T_o2PrqoLOVCU4R2MBoKtP4Ock51e9ufMiAqtgVPx0GNd7Ct38egWwS_wzlzZzbREVKg3aeD6riZ1Ms=",
-    "GooYwTZSLx8grmyDApQOgEdDuDcBrZ29rRbJWNnsm7NLwP19H5XJ-P15IOmXLi7pHkOdnBhEZKkr0VDDloWg9k6ur9agwBT5jmIL9eBZlhb-Ozxy46HkFQNi2ORoQlnkEK4pfWtLNYQ6RJc=",
-    "07hf4kJ4bFxwECTYfj0rBZnwx1asabwQ0tkhfDksBX4VjMT4GRUZMC0vtENsvbdq1Exw9_aAoKI8cSTau3ECGwOU4po8uPFPWAo_Pc7h2aOn_Cuy6f0Qg0N_INetLm6cMUOS9hGtLrCIIa4=",
-    "1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="
-]
+ms = ["1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="]
 api = TikTokApi()
 
 health_status = {
@@ -110,7 +104,7 @@ async def run_service():
             if "Timeout" in str(e):
                 try:
                     logger.warning("Timeout exceeded. Attempting to close sessions.")
-                    # await api.close_sessions()
+                    await api.close_sessions()
                     logger.info("Sessions closed successfully.")
                 except Exception as close_e:
                     logger.error(f"Error while closing sessions: {close_e}", exc_info=True)
