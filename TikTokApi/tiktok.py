@@ -37,7 +37,6 @@ class TikTokPlaywrightSession:
     ms_token: str = None
     base_url: str = "https://www.tiktok.com"
 
-logger = logging.getLogger(__name__)
 class TikTokApi:
     """The main TikTokApi class that contains all the endpoints.
 
@@ -244,9 +243,9 @@ class TikTokApi:
                 with TikTokApi() as api:
                     await api.create_sessions(num_sessions=5, ms_tokens=['msToken1', 'msToken2'])
         """
-        logger.info("Creating sessions")
+        print("Creating sessions")
         self.playwright = await async_playwright().start()
-        logger.info("Playwright started")
+        print("Playwright started")
 
         if browser == "chromium":
             if headless and override_browser_args is None:
