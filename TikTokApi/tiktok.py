@@ -250,7 +250,7 @@ class TikTokApi:
                 override_browser_args = ["--headless=new"]
                 headless = False  # managed by the arg
             self.browser = await self.playwright.chromium.launch(
-                headless=headless, args=["--headless=new", '--disable-gpu'], proxy=random_choice(proxies), executable_path=executable_path
+                headless=headless, args=override_browser_args, proxy=random_choice(proxies), executable_path=executable_path
             )
         elif browser == "firefox":
             self.browser = await self.playwright.firefox.launch(
