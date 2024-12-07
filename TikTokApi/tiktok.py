@@ -243,17 +243,17 @@ class TikTokApi:
                 with TikTokApi() as api:
                     await api.create_sessions(num_sessions=5, ms_tokens=['msToken1', 'msToken2'])
         """
-        print("Creating sessions")
         self.playwright = await async_playwright().start()
-        print("Playwright started")
 
         if browser == "chromium":
             if headless and override_browser_args is None:
                 override_browser_args = ["--headless=new"]
                 headless = False  # managed by the arg
+            print("Starting chromium")
             self.browser = await self.playwright.chromium.launch(
                 headless=headless, args=override_browser_args, proxy=random_choice(proxies), executable_path=executable_path
             )
+            print("Chromium started")
         elif browser == "firefox":
             self.browser = await self.playwright.firefox.launch(
                 headless=headless, args=override_browser_args, proxy=random_choice(proxies), executable_path=executable_path
