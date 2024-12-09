@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
+endpointProd = os.getenv("API_ENDPOINT_PROD", "https://api.ecoboostify.com/reel-setting")
+
 CHROMIUM_EXECUTABLE_PATH = '/root/.cache/ms-playwright/chromium-1148/chrome-linux/chrome'
 ms = ["1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="]
 timezone_utc7 = timezone(timedelta(hours=7))
@@ -64,7 +66,7 @@ async def get_user_and_cookies():
         raise
 
 # Function to send cookies to an endpoint
-def send_cookies_to_endpoint(cookies):
+def send_cookies_to_endpoint(ecoapi, cookies):
     logger.info("Preparing to send cookies to the endpoint")
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -72,7 +74,7 @@ def send_cookies_to_endpoint(cookies):
     }
     logger.debug(f"Payload: {payload}")
     try:
-        response = requests.post(endpoint, json=payload, headers=headers)
+        response = requests.post(ecoapi, json=payload, headers=headers)
         if response.status_code == 200:
             logger.info("Cookies sent successfully!")
             return "success"
@@ -93,7 +95,10 @@ async def run_service():
             user_data, cookies = await get_user_and_cookies()
 
             # Send cookies to endpoint
-            status = send_cookies_to_endpoint(cookies)
+            ecoapis = [endpoint, endpointProd]
+            status = "failed"
+            for ecoapi in ecoapis:
+                status = send_cookies_to_endpoint(ecoapi, cookies)
 
             # Update health status
             health_status["last_run"] = datetime.now(timezone_utc7).isoformat()
