@@ -4,7 +4,7 @@ import os
 import logging
 from TikTokApi import TikTokApi
 from aiohttp import web
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Initialize Logging
 logging.basicConfig(
@@ -20,12 +20,14 @@ ms_token = os.getenv("MS_TOKEN", None)
 endpoint = os.getenv("API_ENDPOINT", "https://api-dev.ecoboostify.com/reel-setting")
 CHROMIUM_EXECUTABLE_PATH = '/root/.cache/ms-playwright/chromium-1148/chrome-linux/chrome'
 ms = ["1jP0CknhzaZ-L7FfDyWzhBudsayDGKfssuaeSlr6bp8ip2iMUtpxkTSp8qfRmLYIQk7n2kz-r-sU8tAlMey0GEAiXIuP_-JFsXK77DZKSO7w2QY2W-EgBVtsWWxyk1h7oJGKCOu3MpGDDuk="]
+timezone_utc7 = timezone(timedelta(hours=7))
 api = TikTokApi()
 
 health_status = {
     "last_run": None,
     "last_status": "Not run yet",
-    "last_error": None
+    "last_error": None,
+    "next_run": None
 }
 
 # Function to get user info and cookies
@@ -39,7 +41,7 @@ async def get_user_and_cookies():
             ms_tokens=ms,
             num_sessions=1,
             sleep_after=10,
-            executable_path=CHROMIUM_EXECUTABLE_PATH,
+            # executable_path=CHROMIUM_EXECUTABLE_PATH,
             browser="chromium"
         )
         logger.info("Session created successfully.")
@@ -94,9 +96,11 @@ async def run_service():
             status = send_cookies_to_endpoint(cookies)
 
             # Update health status
-            health_status["last_run"] = datetime.utcnow().isoformat() + "Z"
+            health_status["last_run"] = datetime.now(timezone_utc7).isoformat()
             health_status["last_status"] = status
             health_status["last_error"] = None
+            next_run_time = datetime.now(timezone_utc7) + timedelta(seconds=120)
+            health_status["next_run_timestamp"] = next_run_time.timestamp()
             logger.info(f"Service cycle completed successfully. Status: {status}")
         except Exception as e:
             logger.error(f"Error in run_service: {e}", exc_info=True)
@@ -114,17 +118,26 @@ async def run_service():
             health_status["last_error"] = str(e)
 
         # Wait for 1 minute before the next cycle
-        logger.info("Waiting for 60 seconds before the next cycle")
-        await asyncio.sleep(60)
+        logger.info("Waiting for 120 seconds before the next cycle")
+        await asyncio.sleep(120)
 
 # Handler for the /healthcheck endpoint
 async def handle_health(request):
     logger.info("Received healthcheck request")
+    now = datetime.now(timezone.utc).timestamp()
+    next_run_timestamp = health_status.get("next_run_timestamp")
+    if next_run_timestamp:
+        remaining = int(next_run_timestamp - now)
+        remaining = max(remaining, 0)
+    else:
+        remaining = 0
+
     return web.json_response({
         "status": "ok" if health_status["last_status"] != "error" else "error",
         "last_run": health_status["last_run"],
         "last_status": health_status["last_status"],
-        "last_error": health_status["last_error"]
+        "last_error": health_status["last_error"],
+        "next_run": remaining
     })
 
 # Function to start the web server
